@@ -44,15 +44,6 @@ class littleDuckListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by littleDuckParser#vars_multiple.
-    def enterVars_multiple(self, ctx:littleDuckParser.Vars_multipleContext):
-        pass
-
-    # Exit a parse tree produced by littleDuckParser#vars_multiple.
-    def exitVars_multiple(self, ctx:littleDuckParser.Vars_multipleContext):
-        pass
-
-
     # Enter a parse tree produced by littleDuckParser#inner_funcs.
     def enterInner_funcs(self, ctx:littleDuckParser.Inner_funcsContext):
         pass
@@ -68,15 +59,6 @@ class littleDuckListener(ParseTreeListener):
 
     # Exit a parse tree produced by littleDuckParser#funcs.
     def exitFuncs(self, ctx:littleDuckParser.FuncsContext):
-        pass
-
-
-    # Enter a parse tree produced by littleDuckParser#funcs_multiple.
-    def enterFuncs_multiple(self, ctx:littleDuckParser.Funcs_multipleContext):
-        pass
-
-    # Exit a parse tree produced by littleDuckParser#funcs_multiple.
-    def exitFuncs_multiple(self, ctx:littleDuckParser.Funcs_multipleContext):
         pass
 
 

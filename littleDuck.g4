@@ -46,14 +46,12 @@ IGNORE : [ \t\r\n]+ -> skip;
 
 // Reglas sintacticas - analisis sintactico
 
-program : PROGRAM ID SEMICOLON vars_multiple? funcs_multiple? MAIN body END;
+program : PROGRAM ID SEMICOLON vars? funcs* MAIN body END;
 body : L_KEY statement+ R_KEY;
 type : T_INT | T_FLOAT;
-vars : VAR ID (COMMA ID)* COLON type SEMICOLON;
-vars_multiple : vars+;
+vars : VAR (ID (COMMA ID)* COLON type SEMICOLON)+;
 inner_funcs : ID COLON type (COMMA ID COLON type)*;
-funcs : VOID ID L_PAREN inner_funcs? R_PAREN L_BRACKET vars_multiple? body R_BRACKET SEMICOLON;
-funcs_multiple : funcs+;
+funcs : VOID ID L_PAREN inner_funcs? R_PAREN L_BRACKET vars body R_BRACKET SEMICOLON;
 statement : assignment | condition | cycle | f_call | print;
 
 expression_multiple : expression (COMMA expression)*;

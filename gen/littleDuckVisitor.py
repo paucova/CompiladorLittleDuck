@@ -29,11 +29,6 @@ class littleDuckVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by littleDuckParser#vars_multiple.
-    def visitVars_multiple(self, ctx:littleDuckParser.Vars_multipleContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by littleDuckParser#inner_funcs.
     def visitInner_funcs(self, ctx:littleDuckParser.Inner_funcsContext):
         return self.visitChildren(ctx)
@@ -41,11 +36,6 @@ class littleDuckVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by littleDuckParser#funcs.
     def visitFuncs(self, ctx:littleDuckParser.FuncsContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by littleDuckParser#funcs_multiple.
-    def visitFuncs_multiple(self, ctx:littleDuckParser.Funcs_multipleContext):
         return self.visitChildren(ctx)
 
 
