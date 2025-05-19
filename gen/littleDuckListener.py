@@ -44,6 +44,15 @@ class littleDuckListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by littleDuckParser#var_group.
+    def enterVar_group(self, ctx:littleDuckParser.Var_groupContext):
+        pass
+
+    # Exit a parse tree produced by littleDuckParser#var_group.
+    def exitVar_group(self, ctx:littleDuckParser.Var_groupContext):
+        pass
+
+
     # Enter a parse tree produced by littleDuckParser#inner_funcs.
     def enterInner_funcs(self, ctx:littleDuckParser.Inner_funcsContext):
         pass

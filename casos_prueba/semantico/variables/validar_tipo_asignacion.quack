@@ -1,0 +1,9 @@
+program programaCool2;
+var
+num5, num6: float;
+x_, y_ : int;
+
+main {
+    num5 = 3;
+}
+end

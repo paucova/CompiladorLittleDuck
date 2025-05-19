@@ -49,7 +49,10 @@ IGNORE : [ \t\r\n]+ -> skip;
 program : PROGRAM ID SEMICOLON vars? funcs* MAIN body END;
 body : L_KEY statement+ R_KEY;
 type : T_INT | T_FLOAT;
-vars : VAR (ID (COMMA ID)* COLON type SEMICOLON)+;
+// actualizamos vars para su lectura
+vars : VAR var_group+;
+var_group : ID (COMMA ID)* COLON type SEMICOLON;
+
 inner_funcs : ID COLON type (COMMA ID COLON type)*;
 funcs : VOID ID L_PAREN inner_funcs? R_PAREN L_BRACKET vars body R_BRACKET SEMICOLON;
 statement : assignment | condition | cycle | f_call | print;

@@ -1,0 +1,15 @@
+program programaCool2;
+var
+num5, num6: float;
+x_, y_ : int;
+
+void quacking(numPatos: int, tamano:float)[
+var patitos: int;
+{patitos = numPatos;
+print("Tengo", patitos, "patitos de tamano", tamano);
+}];
+
+main {
+    quacking = 1;
+}
+end

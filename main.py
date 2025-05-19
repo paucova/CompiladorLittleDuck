@@ -1,25 +1,41 @@
 from antlr4 import *
 from gen.littleDuckLexer import littleDuckLexer
 from gen.littleDuckParser import littleDuckParser
-from casosPrueba import casos_prueba
+from casos_prueba.casosPrueba import casos_prueba
+from semantic_helpers.custom_visitor import CustomVisitor
+from semantic_helpers.symbolTable import FunctionsSymbol
 
 if __name__ == '__main__':
-    texto_input = casos_prueba["errores_sintacticos"][0]
-    # crear el lexer
-    lexer = littleDuckLexer(InputStream(texto_input))
-    stream = CommonTokenStream(lexer)
-    stream.fill()
-
-    parser = littleDuckParser(stream)
+    archivo_quack = "casos_prueba/semantico/variables/validar_declaracion_previa.quack"
+    input_stream = FileStream(archivo_quack)
+    lexer = littleDuckLexer(input_stream)
+    tokens = CommonTokenStream(lexer)
+    parser = littleDuckParser(tokens)
     tree = parser.program()
-    #print(tree.toStringTree(recog=parser))
 
-    #
-    # for token in stream.tokens:
-    #     print(f"Lexema: {token.text} \tCategoría: {token.type}")
-        #aquí te trae los números, entonces queremos mas bien el nombre asociado a cada categoría
+    visitor = CustomVisitor()
 
-    #
-    # for token in stream.tokens:
-    #     print(f"Lexema: {token.text} \tCategoría: {lexer.symbolicNames[token.type]}")
+    try:
+        visitor.visit(tree)
+        for scope in visitor.symbol_table.all_scopes:
+            print(f"Scope: {scope.name}")
+            print("-" * 50)
+            for name, symbol in scope.symbols.items():
+                print(f"Nombre: {name}")
+                print(f"Tipo: {symbol.type}")
+                print(f"Ámbito: {symbol.scope.name if symbol.scope else 'Global'}")
+                if hasattr(symbol, 'line') and symbol.line:
+                    print(f"Línea: {symbol.line}")
+                if hasattr(symbol, 'param_position'):
+                    print(f"Pos: {symbol.param_position}")
+
+                if isinstance(symbol, FunctionsSymbol):
+                    print("Parámetros:")
+                    for i, param in enumerate(symbol.parameters, 1):
+                        print(
+                            f"  {i}. {param.name}: {param.type} (línea: {param.line if hasattr(param, 'line') else 'N/A'})")
+                print("-" * 50)
+    except Exception as ex:
+        print(f"Oops, hubo un error: {ex}")
+
 

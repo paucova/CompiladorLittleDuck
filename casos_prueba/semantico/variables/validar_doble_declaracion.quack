@@ -1,0 +1,10 @@
+program programaCool3;
+var
+num5, num6: float;
+x_, y_ : int;
+x_ : int;
+
+main {
+    num5 = 3.3;
+}
+end
