@@ -9,23 +9,20 @@ var patitos: int;
 print("Tengo", patitos, "patitos de tamano", tamano);
 }];
 
-void quacking(numPatos: int, tamano:float)[
-var patitos: int;
-{patitos = numPatos;
-print("Tengo", patitos, "patitos de tamano", tamano);
-}];
-
 main {
     num5 = 40.04;
     x_ = -5;
     y_ = 6;
     if (x_<y_){
-        while(x_<y_) do
+        while(x_) do
             {
                 x_ = (x_ * y_);
                 y_ = y_ - 1;
             };
-        print("hace calor");
+
+        print(1.2);
+        print(5 + 3 * 2);
+
     }
     else
     {

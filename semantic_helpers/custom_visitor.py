@@ -2,7 +2,8 @@ from gen.littleDuckParser import littleDuckParser
 from gen.littleDuckVisitor import littleDuckVisitor
 from .symbolTable import SymbolTable, VariablesSymbol, FunctionsSymbol
 from .semantic_cube import SemanticCube
-from antlr4 import tree
+from antlr4.tree.Tree import TerminalNodeImpl
+from coding_logic.quadruples import CodeGenerator
 
 
 # hereda del visitor generado por ANTLR
@@ -10,6 +11,11 @@ class CustomVisitor(littleDuckVisitor):
     def __init__(self):
         self.symbol_table = SymbolTable()
         self.semantic_cube = SemanticCube()
+        self.code_gen = CodeGenerator()
+        self.operand_stack = []
+        self.operator_stack = []
+        self.type_stack = []
+        self.next_stack = []
 
     def visitVars(self, ctx: littleDuckParser.VarsContext):
         """
@@ -43,7 +49,7 @@ class CustomVisitor(littleDuckVisitor):
                 )
                 self.symbol_table.define(var_symbol)
 
-    def visitAssignment(self, ctx:littleDuckParser.AssignmentContext):
+    def visitAssignment(self, ctx: littleDuckParser.AssignmentContext):
         """
         Asignación de variables. Validación de tipo, declaración previa, símbolo
         Recordemos que la estructura es:
@@ -62,9 +68,11 @@ class CustomVisitor(littleDuckVisitor):
         if not isinstance(var_symbol, VariablesSymbol):
             raise Exception(f"Linea {line}: Variable {var_name} no es válida.")
 
-        # VALIDACIÓN DE
+        # VALIDACIÓN DE PARÁMETROS
+        if getattr(var_symbol, 'is_param', False):
+            raise Exception(f"Línea {line}: No se puede asignar al parámetro '{var_name}'")
 
-        #VALIDACIÓN DE TIPO
+        # VALIDACIÓN DE TIPO
         if var_symbol.type != var_type:
             raise Exception(f"Linea {line}: La asignación de la variable no corresponde con el tipo en declaración.")
 
@@ -83,7 +91,7 @@ class CustomVisitor(littleDuckVisitor):
             # para indicar que es parámetro
             param.is_param = True
             param.param_position = i + 1
-            params.append(VariablesSymbol(param_name, param_type, param_line))
+            params.append(param)
             # retornamos el arreglo con los parámetros ya como símbolos
         return params
 
@@ -103,7 +111,7 @@ class CustomVisitor(littleDuckVisitor):
                                       ctx.ID().getSymbol().line)
         # nos metemos en el scope interior de la función
         self.symbol_table.enter_scope(f"func_{func_name}")
-        #si vemos que existe algo declarado en el inner funcs (o sea parámetros)
+        # si vemos que existe algo declarado en el inner funcs (o sea parámetros)
         if ctx.inner_funcs():
             params = self.visit(ctx.inner_funcs())
             if params:
@@ -157,15 +165,22 @@ class CustomVisitor(littleDuckVisitor):
         """
         # podemos tener solamente un exp
         first_type = self.visit(ctx.exp(0))
+        first_operand = self.operand_stack[-1] if self.operand_stack else None
         # o la comparación que se evalúa en un booleano
         if ctx.getChildCount() > 1:
             operator = ctx.getChild(1).getText()
             second_type = self.visit(ctx.exp(1))
+            second_operand = self.operand_stack[-1] if self.operand_stack else None
             result_type = self.semantic_cube.get_type_operator(first_type, second_type, operator)
 
             # VALIDAR si no coincide con el cubo semántico (realmente aquí es dificil no tener coincidencia porque siempre se consideran)
             if not result_type:
                 raise Exception(f"No se puede llevar a cabo la operación {first_type} {operator} {second_type}")
+            temp = self.code_gen.temp_new()
+            self.code_gen.create_quadruple(operator, first_operand, second_operand, temp)
+            self.operand_stack.pop()
+            self.operand_stack[-1] = temp
+
             return result_type
         return first_type
 
@@ -175,18 +190,24 @@ class CustomVisitor(littleDuckVisitor):
         exp : term ((PLUS | MINUS) term)*;
         """
         first_type = self.visit(ctx.term(0))
+        first_operand = self.operand_stack[-1] if self.operand_stack else None
 
         # podemos sumar o restar x cantidad de veces
         for i in range(1, len(ctx.term())):
             operator = ctx.getChild(2 * i - 1).getText()
             next_type = self.visit(ctx.term(i))
-
+            next_operand = self.operand_stack[-1] if self.operand_stack else None
             result_type = self.semantic_cube.get_type_operator(first_type, next_type, operator)
 
             # VALIDAR si no coincide con el cubo semántico (realmente aquí es dificil no tener coincidencia porque siempre se consideran)
             if not result_type:
                 raise Exception(f"Tipos incompatibles en operación: {first_type} {operator} {next_type}")
 
+            temp = self.code_gen.temp_new()
+            self.code_gen.create_quadruple(operator, first_operand, next_operand, temp)
+            self.operand_stack.pop()
+            self.operand_stack[-1] = temp
+            first_operand = temp
             first_type = result_type
 
         return first_type
@@ -198,16 +219,24 @@ class CustomVisitor(littleDuckVisitor):
         """
         # podemos tener solamente un factor
         first_type = self.visit(ctx.factor(0))
+        first_operand = self.operand_stack[-1] if self.operand_stack else None
 
         # podemos multiplicar o dividir x cantidad de veces
         for i in range(1, len(ctx.factor())):
             operator = ctx.getChild(2 * i - 1).getText()
             next_type = self.visit(ctx.factor(i))
+            next_operand = self.operand_stack[-1] if self.operand_stack else None
 
             result_type = self.semantic_cube.get_type_operator(first_type, next_type, operator)
             # VALIDAR si no coincide con el cubo semántico (realmente aquí es dificil no tener coincidencia porque siempre se consideran)
             if not result_type:
                 raise Exception(f"Tipos incompatibles en operación: {first_type} {operator} {next_type}")
+
+            temp = self.code_gen.temp_new()
+            self.code_gen.create_quadruple(operator, first_operand, next_operand, temp)
+            self.operand_stack.pop()
+            self.operand_stack[-1] = temp
+            first_operand = temp
             first_type = result_type
         return first_type
 
@@ -221,6 +250,7 @@ class CustomVisitor(littleDuckVisitor):
         elif ctx.num_construct():
             num_node = ctx.num_construct()
             num_text = num_node.getText()
+            self.operand_stack.append(num_text)
             if '.' in num_text or 'e' in num_text.lower():
                 return 'float'
             return 'int'
@@ -228,8 +258,81 @@ class CustomVisitor(littleDuckVisitor):
             var_name = ctx.ID().getText()
             var_symbol = self.symbol_table.find(var_name)
             if not var_symbol:
+                # VALIDAR que el factor haya sido declarado
                 raise Exception(f"Variable no declarada: {var_name}")
             if not isinstance(var_symbol, VariablesSymbol):
+                # VALIDAR que sea una variable
                 raise Exception(f"{var_name} no es una variable")
+            self.operand_stack.append(var_name)
             return var_symbol.type
         raise Exception("Factor inválido: estructura no reconocida")
+
+    # ACCIONES
+
+    def visitPrint(self, ctx: littleDuckParser.PrintContext):
+        """
+        Estructura:
+        PRINT L_PAREN (CTE_STRING|expression) (COMMA (CTE_STRING|expression))* R_PAREN SEMICOLON;
+        """
+        printables = []
+        in_args = False
+
+        for child in ctx.getChildren():
+            text = child.getText()
+            if text == '(':
+                in_args = True
+                continue
+            elif text == ')':
+                in_args = False
+                continue
+            if in_args and text != ',':
+                printables.append(child)
+
+        for item in printables:
+            if isinstance(item, TerminalNodeImpl) and item.getSymbol().type == littleDuckParser.CTE_STRING:
+                continue
+            expr_type = self.visit(item)
+            if expr_type is None:
+                raise Exception(f"Línea {item.getSymbol().line}: Expresión no válida en print")
+            if expr_type not in ['int', 'float', 'bool']:
+                raise Exception(
+                    f"Línea {item.getSymbol().line}: No se puede imprimir valores de tipo {expr_type}, "
+                    f"Solo se permiten int, float, bool o strings"
+                )
+
+    def visitCondition(self, ctx: littleDuckParser.ConditionContext):
+        """
+        Estructura:
+        condition : IF L_PAREN expression R_PAREN body (ELSE body)? SEMICOLON;
+        """
+        cond_type = self.visit(ctx.expression())
+        if cond_type != 'bool':
+            raise Exception(
+                f"Línea {ctx.expression().start.line}: La condición del if debe ser booleana. "
+                f"Tipo recibido: '{cond_type}'"
+            )
+        self.visit(ctx.body(0))
+        if ctx.ELSE():
+            self.visit(ctx.body(1))
+
+    def visitCycle(self, ctx: littleDuckParser.CycleContext):
+        cond_type = self.visit(ctx.expression())
+        if cond_type != 'bool':
+            # VALIDAR que la condición sea correcta (booleana) en el while
+            raise Exception(f"Línea {ctx.expression().start.line}: La condición del while debe ser booleana")
+        self.visit(ctx.body())
+
+    def visitProgram(self, ctx: littleDuckParser.ProgramContext):
+        #declaraciones primero
+        if ctx.vars_():
+            self.visit(ctx.vars_())
+        # luego vienen las funciones
+        for func in ctx.funcs():
+            self.visit(func)
+        # luego el main
+        self.visit(ctx.MAIN())
+        # el body
+        self.visit(ctx.body())
+        # cuádruplo que indica fin del programa
+        self.code_gen.create_quadruple('ENDPROG', None, None, None)
+
