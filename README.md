@@ -1,2 +1,2 @@
 
-![compilador little Duck con antlr](https://github.com/user-attachments/assets/d8b86505-25aa-42ef-98b3-a7343cfdb66e)
+![compilador little Duck con antlr (1)](https://github.com/user-attachments/assets/34109763-3d40-4bc7-8e67-70f1cd4ebe3e)
